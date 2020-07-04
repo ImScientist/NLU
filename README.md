@@ -26,8 +26,8 @@ A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/goog
     ```bash 
     python exec/train.py \
         --data_path ${DATA_DIR}/train.csv \
-        --model_dir ${DATA_DIR}/models \
-        --log_dir ${DATA_DIR}/logs \            
+        --model_dir ${RESULTS_DIR}/models \
+        --log_dir ${RESULTS_DIR}/logs \            
         --size_tr_val 100\
         --size_val 40\
         --batch_size 6 \
@@ -36,12 +36,12 @@ A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/goog
         --seed 10
     ```
 
-- Make a prediction (only for the first 10 el from the test set):
+- Make a prediction (only for the first 100 elements from the test set):
     ```bash 
     python exec/predict.py \
         --data_path ${DATA_DIR}/test.csv \
-        --result_dir ${DATA_DIR}/results \
-        --model_dir ${DATA_DIR}/models \
+        --result_dir ${RESULTS_DIR}/results \
+        --model_dir ${RESULTS_DIR}/models \
         --load_epoch 1 \
         --batch_size 2 \
         --n_el 100
