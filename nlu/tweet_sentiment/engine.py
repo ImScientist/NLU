@@ -34,12 +34,15 @@ def train_one_epoch(model, optimizer, data_loader, weight, device, epoch, print_
 
     weight = weight.to(device)
 
+    predictions = []
+    targets = []
+
     for batch in metric_logger.log_every(data_loader, print_freq, header):
 
         for k in batch.keys():
             batch[k] = batch[k].to(device)
 
-        loss, _ = model(
+        loss, outputs = model(
             input_ids=batch['input_ids'],
             attention_mask=batch['attention_mask'],
             token_type_ids=batch['token_type_ids'],
@@ -59,7 +62,25 @@ def train_one_epoch(model, optimizer, data_loader, weight, device, epoch, print_
         metric_logger.update(
             loss=loss_value, lr=optimizer.param_groups[0]["lr"])
 
-    return metric_logger
+        predictions.append(outputs.detach().to(torch.device('cpu')).tolist())
+        targets.append(batch['target'].detach().to(torch.device('cpu')).tolist())
+
+    predictions = list(itertools.chain(*predictions))
+    predictions = [np.argmax(el) for el in predictions]
+    targets = list(itertools.chain(*targets))
+
+    conf_matrix = get_confusion_plot(
+        predictions, targets, list(model.class_map.keys()))
+
+    report = classification_report(
+        y_true=targets,
+        y_pred=predictions,
+        labels=list(model.class_map.values()),
+        target_names=list(model.class_map.keys()),
+        output_dict=True
+    )
+
+    return metric_logger, conf_matrix, report
 
 
 @torch.no_grad()

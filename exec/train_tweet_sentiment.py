@@ -59,34 +59,48 @@ def get_train_val_ds_stratified(data_path, pretrained_bert_tokenizer_path, size_
 
 
 def write_summary(
-        log_dir, epoch, model, logger_train=None, logger_val=None, report=None, conf_matrix=None
+        log_dir,
+        epoch,
+        model,
+        optimizer,
+        logger_train, logger_val,
+        report_train, report_val,
+        conf_matrix_train, conf_matrix_val
 ):
     with SummaryWriter(log_dir) as w:
 
         result_dict = defaultdict(dict)
 
-        if logger_train is not None:
-            for k, meter in logger_train.meters.items():
-                result_dict[k].update({'train': meter.global_avg})
+        for logger, suffix in [(logger_train, 'train'), (logger_val, 'val')]:
+            if logger is not None:
+                for k, meter in logger.meters.items():
+                    result_dict[k].update({suffix: meter.global_avg})
 
-        if logger_val is not None:
-            for k, meter in logger_val.meters.items():
-                result_dict[k].update({'val': meter.global_avg})
+        for report, suffix in [(report_train, 'train'), (report_val, 'val')]:
+            if report is not None:
+                for k, v in report.items():
+                    if type(v) == dict:
+                        new_dict = dict((f'{key}_{suffix}', value)
+                            for key, value in v.items() if key != 'support')
+                        result_dict[k].update(new_dict)
+                        pass
+                    else:
+                        result_dict[k].update({suffix: v})
+
+        if optimizer is not None:
+            for idx, param_group in enumerate(optimizer.param_groups):
+                result_dict['lr_param_groups'][str(idx)] = param_group['lr']
 
         for k, v in result_dict.items():
-            w.add_scalars(k, v, epoch)
-
-        if report is not None:
-            for k, v in report.items():
+            if k != 'lr':
                 if type(v) == dict:
-                    if 'support' in v:
-                        del v['support']
                     w.add_scalars(k, v, epoch)
                 else:
                     w.add_scalar(k, v, epoch)
 
-        if conf_matrix is not None:
-            w.add_figure('confusion_matrix', conf_matrix, epoch)
+        for conf_matrix, suffix in [(conf_matrix_train, 'train'), (conf_matrix_val, 'val')]:
+            if conf_matrix is not None:
+                w.add_figure(f'confusion_matrix_{suffix}', conf_matrix, epoch)
 
         w.add_histogram('weights/linear/weight', model.linear.weight.data, epoch)
         w.add_histogram('weights/linear/bias', model.linear.bias.data, epoch)
@@ -124,17 +138,20 @@ def train(
     # load model
     #
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-    epoch_range = range(1, num_epochs+1)
+    epoch_range = range(1, num_epochs + 1)
 
-    model = BertClassification.from_pretrained(
+    model = BertClassification(
         pretrained_bert_model_dir,
         output_hidden_states=False,
         output_attentions=False)
 
     model.to(device)
 
-    optimizer = torch.optim.Adam(
-        params=[p for p in model.parameters() if p.requires_grad], lr=0.001, weight_decay=0.001)
+    optimizer = torch.optim.Adam([
+        {'params': model.bert.parameters(), 'lr': 1e-5, 'weight_decay': 1e-5},
+        {'params': model.batch_norm.parameters(), 'lr': 1e-3, 'weight_decay': 1e-3},
+        {'params': model.linear.parameters(), 'lr': 1e-3, 'weight_decay': 5e-3}
+    ])
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
 
@@ -142,27 +159,34 @@ def train(
     #
 
     # evaluate the model with default weights
-    logger_val, conf_matrix, report = evaluate_one_epoch(
-        model, dl_val, weights_val, device, 0, print_freq)
-    write_summary(log_dir, 0, model, None, logger_val, report, conf_matrix)
+    logger_val, conf_matrix_val, report_val = evaluate_one_epoch(
+        model, dl_val, weights_val, device, epoch=0, print_freq=print_freq)
+    write_summary(
+        log_dir, epoch=0, model=model, optimizer=None,
+        logger_train=None, logger_val=logger_val,
+        report_train=None, report_val=report_val,
+        conf_matrix_train=None, conf_matrix_val=conf_matrix_val
+    )
 
     for epoch in epoch_range:
-        logger_train = train_one_epoch(
+        logger_train, conf_matrix_train, report_train = train_one_epoch(
             model, optimizer, dl_train, weights_train, device, epoch, print_freq)
 
-        lr_scheduler.step()
+        logger_val, conf_matrix_val, report_val = evaluate_one_epoch(
+            model, dl_val, weights_val, device, epoch=epoch, print_freq=print_freq)
 
-        logger_val, conf_matrix, report = evaluate_one_epoch(
-            model, dl_val, weights_val, device, epoch, print_freq)
+        write_summary(
+            log_dir, epoch, model, optimizer,
+            logger_train, logger_val,
+            report_train, report_val,
+            conf_matrix_train, conf_matrix_val
+        )
+
+        lr_scheduler.step()
 
         torch.save(
             model.state_dict(),
             os.path.join(model_dir, f'model_state_dict_epoch_{epoch}.pth'))
-        torch.save(
-            optimizer.state_dict(),
-            os.path.join(model_dir, f'optimizer_state_dict_epoch_{epoch}.pth'))
-
-        write_summary(log_dir, epoch, model, logger_train, logger_val, report, conf_matrix)
 
 
 if __name__ == "__main__":
