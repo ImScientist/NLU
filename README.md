@@ -2,8 +2,9 @@ We apply a model that uses BERT as a backbone to two similar problems:
 
 - [Google QUEST Q&A Labeling](https://www.kaggle.com/c/google-quest-challenge): assign 30 scores (from 0 to 1) 
 to a question-answer pair.
-- [Tweet sentiment analysis](https://www.kaggle.com/c/tweet-sentiment-extraction): instead of working on the 
-original task, we use the tweet to predict the sentiment (positive, negative, neutral). 
+- [Tweet sentiment analysis](https://www.kaggle.com/c/tweet-sentiment-extraction): assign a sentiment
+to a tweet (positive, negative or neutral). This task differs from the original task of the 
+competition. 
 
 ## Theory
 
@@ -51,6 +52,11 @@ original task, we use the tweet to predict the sentiment (positive, negative, ne
     %reload_ext tensorboard
     %tensorboard --logdir <logs directory>
     ```
+    The logs from this training session are available in the `logs` 
+    directory (`tensorboard --logdir=logs`).
+    <br> 
+    <img width="600" alt="teaser" src="figures/tweet_sentiment.png">
+
 
 </details>
 
