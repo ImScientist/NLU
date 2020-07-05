@@ -1,4 +1,9 @@
-A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/google-quest-challenge) dataset.
+We apply a model that uses BERT as a backbone to two similar problems:
+
+- [Google QUEST Q&A Labeling](https://www.kaggle.com/c/google-quest-challenge): assign 30 scores (from 0 to 1) 
+to a question-answer pair.
+- [Tweet sentiment analysis](https://www.kaggle.com/c/tweet-sentiment-extraction): instead of working on the 
+original task, we use the tweet to predict the sentiment (positive, negative, neutral). 
 
 ## Theory
 
@@ -21,10 +26,45 @@ A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/goog
     python setup.py install
     ```
 
+<details>
+    <summary>Tweet sentiment analysis</summary>
+
 - Train the model (remove `size_tr_val` to use the complete dataset; `size_val` refers to the size of the validation
  dataset): 
     ```bash 
-    python exec/train.py \
+    python /content/nlu/exec/train_tweet_sentiment.py \
+        --data_path "${DATA_DIR}/train.csv" \
+        --model_dir "${RESULTS_DIR}/models" \
+        --log_dir "${RESULTS_DIR}/logs" \
+        --size_val 2700 \
+        --batch_size 50 \
+        --num_epochs 10 \
+        --print_freq 200 \
+        --seed 10
+    ```
+- Results from the training can be visualised with tensorboard:
+    ```
+    tensorboard --logdir=${RESULTS_DIR}/logs
+    ```
+    or within a Jupyter notebook
+    ```
+    %reload_ext tensorboard
+    %tensorboard --logdir <logs directory>
+    ```
+
+</details>
+
+
+<details>
+    <summary>Google QUEST Q&A Labeling (WIP)</summary>
+
+TODO: The metric logger has to be improved in order to know how good the model performs. 
+At the moment we just record the binary cross entropy for every one of the 30 scores 
+that have to be assigned to a question-answer pair. 
+- Train the model (remove `size_tr_val` to use the complete dataset; `size_val` refers to the size of the validation
+ dataset): 
+    ```bash 
+    python exec/train_google_qa.py \
         --data_path ${DATA_DIR}/train.csv \
         --model_dir ${RESULTS_DIR}/models \
         --log_dir ${RESULTS_DIR}/logs \            
@@ -38,7 +78,7 @@ A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/goog
 
 - Make a prediction (only for the first 100 elements from the test set):
     ```bash 
-    python exec/predict.py \
+    python exec/predict_google_qa.py \
         --data_path ${DATA_DIR}/test.csv \
         --result_dir ${RESULTS_DIR}/results \
         --model_dir ${RESULTS_DIR}/models \
@@ -46,3 +86,4 @@ A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/goog
         --batch_size 2 \
         --n_el 100
     ```
+</details>
