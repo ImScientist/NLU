@@ -24,7 +24,7 @@ A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/goog
 - Train the model (remove `size_tr_val` to use the complete dataset; `size_val` refers to the size of the validation
  dataset): 
     ```bash 
-    python exec/train.py \
+    python exec/train_google_qa.py \
         --data_path ${DATA_DIR}/train.csv \
         --model_dir ${RESULTS_DIR}/models \
         --log_dir ${RESULTS_DIR}/logs \            
@@ -38,7 +38,7 @@ A model applied to the [Google QUEST Q&A Labeling](https://www.kaggle.com/c/goog
 
 - Make a prediction (only for the first 100 elements from the test set):
     ```bash 
-    python exec/predict.py \
+    python exec/predict_google_qa.py \
         --data_path ${DATA_DIR}/test.csv \
         --result_dir ${RESULTS_DIR}/results \
         --model_dir ${RESULTS_DIR}/models \

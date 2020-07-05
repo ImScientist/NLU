@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import BCEWithLogitsLoss
 from typing import List
-from ..variables import target_cols
+from .variables import target_cols
 
 from transformers.modeling_bert import BertPreTrainedModel, BertModel
 
@@ -31,7 +31,7 @@ class BertMultipleProba(BertPreTrainedModel):
             target: torch.long = None
     ):
         """
-        Take the maximum value for every channel (hidden_dimension) among all
+        Take the mean value for every channel (hidden_dimension) among all
         tokens that contribute to the question and to the answer, respectively.
         Concatenate both outputs and feed them to a linear model.
         """
@@ -48,6 +48,8 @@ class BertMultipleProba(BertPreTrainedModel):
         # -> (batch_size, config.hidden_size=784)
         q_input = (last_hidden_states * q_mask).sum(1) / q_mask.sum(1)
         a_input = (last_hidden_states * a_mask).sum(1) / a_mask.sum(1)
+        # q_input, _ = torch.max(last_hidden_states * q_mask, dim=-2)
+        # a_input, _ = torch.max(last_hidden_states * a_mask, dim=-2)
 
         # -> (batch_size, 2 * config.hidden_size)
         qa_input = torch.cat((q_input, a_input), dim=1)

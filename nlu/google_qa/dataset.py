@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Dict, List
 from torch.utils.data import Dataset
 import pandas as pd
-from ..variables import target_cols
+from .variables import target_cols
 from ..clean_txt import remove_common_misspellings
 
 
