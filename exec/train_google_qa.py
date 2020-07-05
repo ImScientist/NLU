@@ -1,14 +1,15 @@
 import os
 import argparse
 import torch
+from collections import defaultdict
 
 from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 from transformers import BertTokenizer
 
-from nlu.models_pytorch.dataset import GoogleQADataset, collate_fn
-from nlu.models_pytorch.models import BertMultipleProba
-from nlu.models_pytorch.engine import train_one_epoch, evaluate_one_epoch
+from nlu.google_qa.dataset import GoogleQADataset, collate_fn
+from nlu.google_qa.models import BertMultipleProba
+from nlu.google_qa.engine import train_one_epoch, evaluate_one_epoch
 
 
 def train(
@@ -66,7 +67,7 @@ def train(
 
         logger_train = train_one_epoch(model, optimizer, dl_train, device, epoch, print_freq)
 
-        lr_scheduler.step(epoch=epoch + 1)  # set the lr for the next epoch? ###TODO:
+        lr_scheduler.step()
 
         logger_val = evaluate_one_epoch(model, dl_val, device, epoch, print_freq)
 
@@ -74,17 +75,22 @@ def train(
         torch.save(optimizer.state_dict(), os.path.join(model_dir, f'optimizer_state_dict_epoch_{epoch}.pth'))
 
         with SummaryWriter(log_dir) as w:
+            result_dict = defaultdict(dict)
+
             for k, meter in logger_train.meters.items():
-                w.add_scalars(k, {'train': meter.global_avg}, epoch)
+                result_dict[k].update({'train': meter.global_avg})
 
             for k, meter in logger_val.meters.items():
-                w.add_scalars(k, {'val': meter.global_avg}, epoch)
+                result_dict[k].update({'val': meter.global_avg})
+
+            for k, v in result_dict.items():
+                w.add_scalars(k, v, epoch)
 
 
 if __name__ == "__main__":
     """
     Example: 
-        python exec/train.py \
+        python exec/train_google_qa.py \
             --data_path ${DATA_DIR}/train.csv \
             --model_dir ${RESULTS_DIR}/models \
             --log_dir ${RESULTS_DIR}/logs \

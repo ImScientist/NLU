@@ -7,8 +7,8 @@ import torch
 from torch.utils.data import DataLoader
 from transformers import BertTokenizer
 
-from nlu.models_pytorch.models import BertMultipleProba
-from nlu.models_pytorch.dataset import GoogleQADataset, collate_fn
+from nlu.google_qa.models import BertMultipleProba
+from nlu.google_qa.dataset import GoogleQADataset, collate_fn
 
 
 def predict(
@@ -79,7 +79,7 @@ def predict(
 if __name__ == "__main__":
     """ 
     Example:         
-        python exec/predict.py \
+        python exec/predict_google_qa.py \
             --data_path ${DATA_DIR}/test.csv \
             --result_dir ${RESULTS_DIR}/results \
             --model_dir ${RESULTS_DIR}/models \
