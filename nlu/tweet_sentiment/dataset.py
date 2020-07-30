@@ -21,7 +21,7 @@ def collate_fn(batch):
 
 
 def get_df(class_map: Dict[str, int], data_path: str, n_el: int = None):
-    df = pd.read_csv(data_path)
+    df = pd.read_csv(data_path, engine='python')
     df = df[df['text'].notnull()].reset_index(drop=True)
     df['sentiment_id'] = df['sentiment'].apply(lambda x: class_map[x])
 

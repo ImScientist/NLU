@@ -21,7 +21,7 @@ competition.
     ```
     create a python virtual environment and install the dependencies:
     ```bash 
-    conda create nlu python=3.6
+    conda create -n nlu python=3.6 -y
     conda activate nlu 
     pip install -r requirements.txt
     python setup.py install
@@ -33,7 +33,7 @@ competition.
 - Train the model (remove `size_tr_val` to use the complete dataset; `size_val` refers to the size of the validation
  dataset): 
     ```bash 
-    python /content/nlu/exec/train_tweet_sentiment.py \
+    python exec/train_tweet_sentiment.py \
         --data_path "${DATA_DIR}/train.csv" \
         --model_dir "${RESULTS_DIR}/models" \
         --log_dir "${RESULTS_DIR}/logs" \
